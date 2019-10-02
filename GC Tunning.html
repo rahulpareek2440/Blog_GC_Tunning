@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>Performance Tuning Garbage Collection in Java</title>
+		<meta name="keywords" content="java, garbage collection, jvm, sun, java performance, performance tuning java, performance, gc" />
+		<meta name="description" content="A summary of tips for optomizing performance of garbage collection in java." />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+				<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.4/readable/bootstrap.min.css" type="text/css" />
+				<link rel="stylesheet" href="./GC_pg.css" type="text/css" />
+			</head>
+			<body>
+				<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+					<div class="container">
+						<div class="navbar-header">
+							<a class="navbar-brand" href="/">
+								<img src="https://avatars2.githubusercontent.com/u/11085985?s=400&v=4" height="30" width="30" alt="Rahul Pareek" class="img-circle" />Rahul Pareek</a>
+						</div>
+						<div class="collapse navbar-collapse">
+							<ul class="nav navbar-nav">
+
+								<li class="active">
+									<a href="www.rahulpareek.tools" title="My page">Blog</a>
+								</li>
+								<li>
+									<a href="https://www.github.com/rahulpareek2440" title="Github link to my Personal Repo">Github</a>
+								</li>
+								<li>
+									<a href="https://www.linkedin.com/in/rahulpareek2440" title="Link to Rahul Pareek LinkedIn Profile">LinkedIn</a>
+								</li>
+								<li>
+									<a href="rahulpareek.tools" rel="nofollow">Contact Me</a>
+								</li>
+							</ul>
+						</div>
+						<!--/.nav-collapse -->
+					</div>
+				</div>
+
+				<div id="container">
+
+
+					<div class="container-fluid">
+						<div class="row">
+							<div id="main" class="col-md-9">
+
+
+								<h2>Tuning Garbage Collection Outline</h2>
+								<br />
+								<div class="entryBody">
+
+									<strong>1.0 Introduction</strong>
+
+									<ul>
+										<li>For many applications garbage collection performance is not significant</li>
+										<li>Default collector should be first choice</li>
+									</ul>
+
+									<strong>2.0 Generations</strong>
+									<ul>
+										<li>Most straightforward GC will just iterate over every object in the heap and determine if any other objects reference it.</li>
+										<ul>
+											<li>This gets really slow as the number of objects in the heap increase</li>
+										</ul>
+
+										<li>GC's therefor make assumptions about how your application runs.</li>
+										<li>Most common assumption is that an object is most likely to die shortly after it was created: called infant mortality</li>
+										<li>This assumes that an object that has been around for a while, will likely stay around for a while.</li>
+										<li>GC organizes objects into generations (young, tenured, and perm) <em>This is important!</em>
+										</li>
+									</ul>
+
+									<strong>2.1 Performance Considerations</strong>
+									<ul>
+										<li>Ways to measure GC Performance</li>
+										<ul>
+											<li>Throughput - % of time not spent in GC over a long period of time.</li>
+											<li>Pauses - app unresponsive because of GC</li>
+											<li>Footprint - overall memory a process takes to execute</li>
+											<li>Promptness - time between object death, and time when memory becomes available</li>
+										</ul>
+										<li>There is no one right way to size generations, make the call based on your applications usage.</li>
+									</ul>
+
+									<strong>2.2 Measurement</strong>
+									<ul>
+										<li>Throughput and footprint are best measured using metrics particular to the application.</li>
+
+										<li>Command line argument -verbose:gc output<br />
+											<code>[GC 325407K->83000K(776768K), 0.2300771 secs]</code>
+										</li>
+										<ul>
+											<li>
+												<code>GC</code> - Indicates that it was a minor collection (young generation). If it had said <code>Full GC</code> then that indicates that it was a major collection (tenured generation).</li>
+											<li>
+												<code>325407K</code> - The combined size of live objects before garbage collection.</li>
+											<li>
+												<code>83000K</code> - The combined size of live objects after garbage collection.</li>
+											<li>
+												<code>(776768K)</code> - the total available space, not counting the space in the permanent generation, which is the total heap minus one of the survivor spaces.</li>
+											<li>
+												<code>0.2300771 secs</code> - time it took for garbage collection to occur.</li>
+										</ul>
+										<li>You can get more detailed output using <code>-XX:+PrintGCDetails</code> and <code>-XX:+PrintGCTimeStamps</code>
+										</li>
+
+									</ul>
+
+									<strong>3 Sizing the Generations</strong>
+									<ul>
+										<li>The <code>-Xmx</code> value determines the size of the heap to reserve at JVM initialization.</li>
+										<li>The <code>-Xms</code> value is the space in memory that is committed to the VM at init. The JVM can grow to the size of <code>-Xmx</code>.</li>
+										<li>The difference between <code>-Xmx</code> and <code>-Xms</code> is virtual memory (virtually committed)</li>
+									</ul>
+
+									<strong>3.1 Total Heap</strong>
+
+									<ul>
+										<li>Total available memory is the most important factor affecting GC performance</li>
+										<li>By default the JVM grows or shrinks the heap at each GC to keep the ratio of free space to live objects at each collection within a specified range.</li>
+										<ul>
+											<li>
+												<code>-XX:MinHeapFreeRatio</code> - when the percentage of free space in a generation falls below this value the generation will be expanded to meet this percentage. Default is 40</li>
+											<li>
+												<code>-XX:MaxHeapFreeRatio</code> - when the percentage of free space in a generation exceeded this value the generation will shrink to meet this value. Default is 70</li>
+										</ul>
+										<li>For server applications</li>
+										<ul>
+											<li>Unless you have problems with pauses grant as much memory as possible to the JVM</li>
+											<li>Set <code>-Xms</code> and <code>-Xmx</code> close to each other or equal for a faster startup (removes constant resizing of JVM). But if you make a poor choice the JVM can't compensate for it.</li>
+											<li>Increase memory sa you increase # of processors because memory allocation can be parallelized.</li>
+										</ul>
+									</ul>
+
+									<strong>3.2 The Young Generation</strong>
+
+									<ul>
+										<li>The bigger the young generation the less minor GC's, but this implies a smaller tenured generation which increases the frequency of major collections.</li>
+										<li>You need to look at your application and determine how long your objects live for to tune this.</li>
+										<li>
+											<code>-XX:NewRatio=3</code> - the young generation will occupy 1/4 the overall heap</li>
+										<li>
+											<code>-XX:NewSize</code> - Size of the young generation at JVM init. Calculated automatically if you specify -XX:NewRatio</li>
+										<li>
+											<code>-XX:MaxNewSize</code> - The largest size the young generation can grow to (unlimited if this value is not specified at command line)</li>
+									</ul>
+
+
+									<strong>3.2.1 Young Generation Guarantee</strong>
+
+									<ul>
+										<li>The <code>-XX:SurvivorRatio</code> option can be used to tune the number of survivor spaces.</li>
+										<li>Not often important for performance</li>
+										<ul>
+											<li>
+												<code>-XX:SurvivorRatio=6</code> - each survivor space will be 1/8 the young generation</li>
+											<li>If survivor spaces are too small copying collection overflows directly into the tenured generation.</li>
+											<li>Survivor spaces too large uselessly empty</li>
+											<li>
+												<code>-XX:+PrintTenuringDistribution</code> - shows the threshold chosen by JVM to keep survivors half full, and the ages of objects in the new generation.</li>
+										</ul>
+										<li>Server Applications</li>
+										<ul>
+											<li>First decide the total amount of memory you can afford to give the virtual machine. Then graph your own performance metric against young generation sizes to find the best setting. </li>
+											<li>Unless you find problems with excessive major collection or pause times, grant plenty of memory to the young generation. </li>
+											<li>Increasing the young generation becomes counterproductive at half the total heap or less (whenever the young generation guarantee cannot be met). </li>
+											<li>Be sure to increase the young generation as you increase the number of processors, since allocation can be parallelized.</li>
+										</ul>
+									</ul>
+
+									<strong>4 Types of Collectors</strong>
+
+									<ul>
+										<li>Everything to this point talks about the default garbage collector, there are other GC's you can use</li>
+										<li>Throughput Collector - Uses a parallel version of the young generation collector</li>
+										<ul>
+											<li>
+												<code>-XX:+UseParallelGC</code>
+											</li>
+											<li>Tenured collector is the same as in default</li>
+										</ul>
+										<li>Concurrent Low Pause Collector</li>
+										<ul>
+											<li>Collects tenured collection concurrently with the execution of the app.</li>
+											<li>The app is paused for short periods during collection</li>
+											<li>
+												<code>-XX:+UseConcMarkSweepGC</code>
+											</li>
+											<li>To enable a parallel young generation GC with the concurrent GC add <code>-XX:+UseParNewGC</code> to the startup. Don't add <code>-XX:+UseParallelGC</code> with this option.</li>
+										</ul>
+										<li>Incremental Low Pause Collector</li>
+										<ul>
+											<li>Sometimes called Train Collector</li>
+											<li>Collects a portion of the tenured generation at each minor collection.</li>
+											<li>Tries to minimize large pause of major collections</li>
+											<li>Slower than the default collector when considering overall throughput </li>
+											<li>Good for client apps (my observation)</li>
+											<li>
+												<code>-Xincgc</code>
+											</li>
+										</ul>
+										<li>Don't mix these options, JVM may not behave as expected.</li>
+									</ul>
+
+									<strong>4.1 When to use Throughput Collector</strong>
+									<ul>
+										<li>Large number of processors</li>
+										<li>Reduces serial execution time of app, by using multiple threads for GC</li>
+										<li>App with lots of threads allocating objects should use this with a large young generation</li>
+										<li>Server Applications (my observation)</li>
+									</ul>
+
+									<strong>4.2 The Throughput collector</strong>
+
+									<ul>
+										<li>By default the throughput collector uses the number of CPU's as its value for number of GC threads.</li>
+										<li>On a computer with one CPU it will not perform as well as the default collector</li>
+										<li>Overhead from parallel execution (synchronization costs)</li>
+										<li>With 2 CPU's the throughput collector performs as well as the default garbage collector.</li>
+										<li>With more then 2 CPU's you can expect to see a reduction in minor GC pause times</li>
+										<li>You can control the number of threads with <code>-XX:ParallelGCThreads=n</code>
+										</li>
+										<li>Fragmentation can occur </li>
+										<ul>
+											<li>Reduce GC threads</li>
+											<li>Increase Tenured Generation size</li>
+										</ul>
+									</ul>
+
+									<strong>4.2.1 Adaptive Sizing</strong>
+
+									<ul>
+										<li>Keeps stats about GC times, allocation rates, and free space then sizes young and tenured generation to best fit the app.</li>
+										<li>J2SE 1.4.1 and later</li>
+										<li>
+											<code>-XX:+UseAdaptiveSizePolicy</code> (on by default)</li>
+									</ul>
+
+									<strong>4.2.2 Aggressive Heap</strong>
+
+									<ul>
+										<li>Attempts to make maximum use of physical memory for the heap</li>
+										<li>Inspects computer resources (memory, num processors) and sets params optimal for long running memory allocation intensive jobs.</li>
+										<li>Must have at least 256MB of RAM</li>
+										<li>For lots of CPU's and RAM, but 1.4.1+ has shown improvements on 4-Way machines.</li>
+										<li>
+											<code>-XX:+AggressiveHeap</code>
+										</li>
+									</ul>
+
+									<strong>4.3 When to use the Concurrent Low Pause Collector</strong>
+
+									<ul>
+										<li>Apps that benefit from shorter GC pauses, and can share resources with GC during execution.</li>
+										<li>Apps with large sets of long living data (tenured generation)</li>
+										<li>Two or more processors</li>
+										<li>Interactive apps with modest tenured generation size, and one CPU</li>
+									</ul>
+
+									<strong>4.4 The Concurrent Low Pause Collector</strong>
+
+									<ul>
+										<li>Uses a separate GC thread to do parts of the major collection concurrently with the app threads.</li>
+										<li>Pauses App threads in the beginning of a collection and toward the middle (longer pause in middle)</li>
+										<li>The rest of the GC is in a single thread that runs at the same time as the app</li>
+									</ul>
+
+									<strong>4.4.1 Overhead of Concurrency</strong>
+
+									<ul>
+										<li>Doesn't provide much of an advantage on single processor machines.</li>
+										<li>Fragmentation can occur.</li>
+										<li>Two processor machine eliminates pauses due to the GC thread.</li>
+										<li>The more CPU's the advantages of concurrent collector increase.</li>
+									</ul>
+
+									<strong>4.4.2 Young Generation Guarantee</strong>
+
+									<ul>
+										<li>There has to be enough contiguous space available in the tenured generation for all objects in the eden and one survivor space.</li>
+										<li>A larger heap is needed compared to the default collector.</li>
+										<li>Add the size of the young generation to the tenured generation.</li>
+									</ul>
+
+									<strong>4.4.3 Full Collections</strong>
+
+									<ul>
+										<li>If the concurrent collector is unable to finish collecting the tenured generation before the tenured generation fills up, the application is paused and the collection is completed.</li>
+										<li>When this happens you should make some adjustments to your GC params</li>
+									</ul>
+
+									<strong>4.4.4 Floating Garbage</strong>
+
+									<ul>
+										<li>Floating Garbage - Objects that die while the GC is running (after they have been checked).</li>
+										<li>Increase the tenured generation by 20% to reduce floating garbage.</li>
+									</ul>
+
+									<strong>4.4.5 Pauses</strong>
+
+									<ul>
+										<li>First Pause - marks live objects - initial marking</li>
+										<li>Second Pause - remarking phase - checks objects that were missed during the concurrent marking phase due to the concurrent execution of the app threads.</li>
+									</ul>
+
+									<strong>4.4.6 Concurrent Phases</strong>
+
+									<ul>
+										<li>Concurrent Marking phase occurs between initial mark and remarking phase.</li>
+										<li>Concurrent sweeping phase collects dead objects after the remarking phase.</li>
+									</ul>
+
+									<strong>4.4.7 Measurements with the Concurrent Collector</strong>
+
+									<ul>
+										<li>Use <code>-verbose:gc</code> with <code>-XX:+PrintGCDetails</code>
+										</li>
+										<li>vCMS-initial-mark</code> shows GC stats for the initial marking phase</li>
+									<li>
+										<code>CMS-concurrent-mark</code> - shows GC stats for concurrent marking phase.</li>
+									<li>
+										<code>CMS-concurrent-sweep</code> - shows stats for concurrent sweeping phase</li>
+									<li>
+										<code>CMS-concurrent-preclean</code> - stats for determining work that can be done concurrently</li>
+									<li>
+										<code>CMS-remark</code> - stats for the remarking phase.</li>
+									<li>
+										<code>CMS-concurrent-reset</code> - concurrent stuff is done, ready for next collection.</li>
+								</ul>
+
+								<strong>4.4.8 Parallel Minor Collection Options with Concurrent Collector</strong>
+
+								<ul>
+									<li>
+										<code>-XX:+UseParNewGC</code> - for multiprocessor machines, enables multi threaded young generation collection.</li>
+									<li>
+										<code>-XX:+CMSParallelRemarkEnabled</code> - reduce remark pauses</li>
+								</ul>
+
+								<strong>4.5 When to use the Incremental Low Pause Collector</strong>
+
+								<ul>
+									<li>Use when you can afford to tradeoff longer and more frequent young generation GC pauses for shorter tenured generation pauses</li>
+									<li>You have a large tenured generation</li>
+									<li>Single Processor</li>
+								</ul>
+
+								<strong>4.6 The Incremental Low Pause Collector</strong>
+
+								<ul>
+									<li>Minor collections same as default collector.</li>
+									<li>Don't use try to use parallel GC with this collector</li>
+									<li>Incrementally Collects parts of the tenured generation at each young collection.</li>
+									<li>Tries to avoid long major collections by doing small chunks each minor collection.</li>
+									<li>Can cause fragmentation of the heap. Sometimes need to increase tenured generation size compared to the default.</li>
+									<li>There is some overhead required to maintain the position of the incremental collector. Less overhead than is required by the default collector.</li>
+									<li>First try the default collector, and adjust heap sizing. If major pauses are too long try incremental.</li>
+									<li>If the incremental collector can't collect the tenured generation fast enough you will run out of memory, try reducing the young generation.</li>
+									<li>If young generation collections do not free any space, could be because of fragmentation. Increase tenured generation size.</li>
+								</ul>
+
+								<strong>4.6.1 Measurements with the Incremental Collector</strong>
+
+								<ul>
+									<li>
+										<code>-verbose:gc</code> and <code>-XX:+PrintGCDetails</code>
+									</li>
+									<li>Look for the Train: to see the stats for the incremental collection.</li>
+								</ul>
+
+								<strong>5 Other Considerations</strong>
+
+								<ul>
+									<li>The permanent generation may be a factor on apps that dynamically generate and load many classes (JSP, CFM application servers)</li>
+									<li>You may need to increase the <code>MaxPermSize</code>, eg: <code>-XX:MaxPermSize=128m</code>
+									</li>
+									<li>Apps that rely on finalization (finalize method, or finally clauses) will cause lag in garbage collection. This is a bad idea, use only for errorious situations.</li>
+									<li>Explicit garbage collection calls (<code>System.gc()</code>) force a major collection. You can measure the effectiveness of these calls by disabling them with <code>-XX:+DisableExplicitGC</code>
+									</li>
+									<li>RMI garbage collection intervals can be controlled with</li>
+									<ul>
+										<li>
+											<code>-Dsun.rmi.dgc.client.gcInteraval=3600000</code>
+										</li>
+										<li>
+											<code>-Dsun.rmi.dgc.server.gcInterval=3600000</code>
+										</li>
+									</ul>
+									<li>On Solaris 8+ you can enable libthreads, lightweight thread processes, these may increase thread performance.</li>
+									<li>To enable add <code>/usr/lib/lwp</code> to <code>LD_LIBRARY_PATH</code>
+									</li>
+									<li>Soft References cleared less aggressively in server.</li>
+									<li>
+										<code>-XX:SoftRefLRUPolicyMSPerMB=10000</code>
+									</li>
+									<li>Default value is 1000, or one second per MB</li>
+								</ul>
+
+								<strong>6 Conclusion</strong>
+
+								<ul>
+									<li>GC can be bottleneck in your app.</li>
+								</ul>
+
+								<strong>More Information</strong>
+
+
+								<ul>
+									<li>FAQ: http://java.sun.com/docs/hotspot/gc1.4.2/faq.html</li>
+									<li>Concurrent collector research paper: http://research.sun.com/techrep/2000/abstract-88.html</li>
+									<li>HotSpot VM command line options: http://java.sun.com/docs/hotspot/VMOptions.html</li>
+								</ul> 
+							</div>
+							<hr />
+							<br />
+
+						</div>
+
+					</div>
+
+				</div>
+			</div>
+
+		</body>
+	</html>

@@ -1,0 +1,160 @@
+/*
+ Colors
+ 	
+*/
+
+#container { width: 98%; padding:10px 10px 0px 10px; margin:0; }
+
+a { color: #E63233 }
+
+#main { 
+	padding: 50px 30px;
+	
+}
+#side { 
+	padding-top: 80px;
+	border-left: 1px solid #f1f1f1;
+	
+}
+
+#side img { margin-bottom: 25px; }
+
+.siteSearch { margin:0px 0px 5px 0px; background-color:silver; padding: 4px 8px; text-align:left; }
+.siteSearch input.q { width: 200px;}
+
+#footer { margin: 0px 10px 0px 10px; padding:20px; font-size:80%; background-color:#f8f8f8; }
+
+
+
+.entryDate { text-align:right; text-transform:uppercase; font-size:x-small; color:gray; }
+
+.commentBody {
+	
+	margin-right: 20px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 50px;
+	border-left: 1px solid #f1f1f1;
+
+	padding: 10px 20px 10px 10px;
+	font-size: small;
+	font-family: verdana,sans-serif;
+	min-height:30px;
+}
+
+.myComment {
+	background-color: #f1f1f1;
+	padding: 15px;
+}	
+
+.commentNumber {
+	float:right;
+	color: #f1f1f1;
+	padding: 15px 0px 0px 15px;
+	font-size: 28px;
+	float:right;
+	
+}
+
+.commentCredit {
+	margin-left: 20px;
+	color: gray;
+	font-size: xx-small;
+	margin-top:5px;
+}
+
+img.gravitar {
+	margin: 15px 0px 0px 5px;
+	border: 2px solid silver;
+}
+.commentForm { margin-left: 20px; margin-top:5px; }
+
+pre { background-color: #fbfbfb; border-left: 2px solid silver; width:90%; padding: 5px; font-size: 9pt; overflow:auto; word-wrap:normal; }
+code { color: gray; padding: 1px; background-color:#fbfbfb; }
+blockquote { 
+	border-left: 1px solid #d3d3d3; padding:5px; 
+	line-height: 1.6em;
+}
+blockquote:before { 
+	content: open-quote;
+	font-size: x-large;
+	color: silver;
+	font-family:arial;
+}
+blockquote:after {
+	content: close-quote;
+	font-size: x-large;
+	color: silver;
+	font-family: arial;
+}
+
+.ad {
+	border-top: 3px solid #fbfbfb;
+	padding: 2px;
+	margin: 8px;	
+}
+
+.rating {
+	font-size: x-small;
+}
+.multiplead {
+	float:right;
+	margin:5px;
+	border-left:1px solid #f1f1f1;
+	border-bottom:1px solid #f1f1f1;
+	position:relative;
+	padding:5px;
+	background-color:white;
+}
+
+.catImg {
+	margin-left:15px;
+	margin-bottom:15px;
+	padding-left: 2px;
+	padding-bottom: 2px;
+}
+.entryCategoryImg {
+	margin-bottom: 0px;
+}
+
+.entryLinks {
+	margin-top: 5px;
+	font-size: small;
+	color: gray;
+}
+
+.archives { font-size:xx-small; text-align:left; padding:5px; }
+
+
+.summary { font-size:small; }
+.url { color:green; font-size:small; margin-bottom:5px;}
+#more { font-weight: bold; font-size: large; }
+#searchresults { margin-right: 25px; margin-left: 5px;font-family:arial,sans-serif; }
+
+.navbar-brand>img { display:inline;}
+
+h1.home, h2.home { padding: 4px;
+	margin:0px;
+}
+
+h2.home { font-size: 24px;}
+h1.home { font-size: 34px;}
+
+
+.homeEntryDesc {
+	padding: 15px;
+	margin-left: 10px;
+	margin-bottom: 3px;
+	margin-right: 60px;
+}
+
+.smallestTag { font-size: xx-small; color:silver; }
+.smallTag { font-size: small; color: gray; }
+.mediumTag { font-size: large; font-weight:bold;}
+.largeTag { font-size: 26px; font-weight:bold; }
+.largestTag { font-size: 32px;  } 
+
+
+
+
+
